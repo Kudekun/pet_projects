@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    {% load static %}
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'styles.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="jumbotron mt-4">
+            <h1 class="display-4">Вітаємо на Weather App!</h1>
+            <p class="lead">Знайдіть актуальну погоду для будь-якого міста.</p>
+        </div>
+        <form method="get" class="form-inline mb-4" id="city-form">
+            <input type="text" name="city" id="city-input" placeholder="Введіть назву міста" required class="form-control mr-sm-2">
+            <button type="submit" class="btn btn-primary">Отримати погоду</button>
+            <button type="button" id="geo-btn" class="btn btn-secondary ml-2">Моя локація</button>
+        </form>
+
+        {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+        {% endif %}
+
+        {% if weather %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Погода у місті {{ weather.name }}</h2>
+                    <p class="card-text">Температура: {{ weather.main.temp }}°C</p>
+                    <p class="card-text">Вологість: {{ weather.main.humidity }}%</p>
+                    <p class="card-text">Швидкість вітру: {{ weather.wind.speed }} м/с</p>
+                    <p class="card-text">Опис: {{ weather.weather.0.description }}</p>
+                </div>
+            </div>
+
+            {% if map_url %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Місце розташування</h2>
+                        <iframe src="{{ map_url }}" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    <script>
+        document.getElementById('geo-btn').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('city-input').value = data.address.city || data.address.town || data.address.village;
+                            document.getElementById('city-form').submit();
+                        })
+                        .catch(error => console.log('Помилка при отриманні локації:', error));
+                });
+            } else {
+                alert('Геолокація не підтримується.');
+            }
+        });
+    </script>
+</body>
+</html>
